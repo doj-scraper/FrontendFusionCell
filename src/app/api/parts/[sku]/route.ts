@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 interface RouteParams {
-  params: Promise<{
+  params: {
     sku: string;
-  }>;
+  };
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { sku } = await params;
+    const { sku } = params;
 
-    const part = await db.part.findUnique({
+    const part = await db.part.findFirst({
       where: {
         sku,
         isActive: true,

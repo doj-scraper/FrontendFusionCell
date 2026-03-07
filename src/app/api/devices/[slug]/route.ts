@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 interface RouteParams {
-  params: Promise<{
+  params: {
     slug: string;
-  }>;
+  };
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { slug } = await params;
+    const { slug } = params;
 
-    const device = await db.device.findUnique({
+    const device = await db.device.findFirst({
       where: {
         slug,
         isActive: true,

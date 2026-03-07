@@ -375,17 +375,17 @@ export function SearchModal({ open: controlledOpen, onOpenChange }: SearchModalP
   // Navigation handlers
   const handlePartSelect = (part: SearchResultPart) => {
     setOpen(false)
-    router.push(`/parts/${part.slug}`)
+    router.push(`/part/${part.sku}`)
   }
 
   const handleDeviceSelect = (device: SearchResultDevice) => {
     setOpen(false)
-    router.push(`/devices/${device.slug}`)
+    router.push(`/device/${device.slug}`)
   }
 
   const handleBrandSelect = (brand: SearchResultBrand) => {
     setOpen(false)
-    router.push(`/brands/${brand.slug}`)
+    router.push(`/brand/${brand.slug}`)
   }
 
   const handleViewAllResults = () => {

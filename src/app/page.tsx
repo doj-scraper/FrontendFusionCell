@@ -117,7 +117,7 @@ function FeaturedProducts() {
           key={part.id}
           className="overflow-hidden group hover:shadow-lg transition-shadow"
         >
-          <Link href={`/parts/${part.sku}`} className="block">
+          <Link href={`/part/${part.sku}`} className="block">
             <div className="aspect-square bg-muted relative overflow-hidden">
               {part.image ? (
                 <img
@@ -140,7 +140,7 @@ function FeaturedProducts() {
           <CardHeader className="p-4">
             <CardTitle className="text-base line-clamp-2">
               <Link
-                href={`/parts/${part.sku}`}
+                href={`/part/${part.sku}`}
                 className="hover:text-primary transition-colors"
               >
                 {part.name}
@@ -165,7 +165,7 @@ function FeaturedProducts() {
           </CardContent>
           <CardFooter className="p-4 pt-0">
             <Button className="w-full" size="sm" asChild>
-              <Link href={`/parts/${part.sku}`}>View Details</Link>
+              <Link href={`/part/${part.sku}`}>View Details</Link>
             </Button>
           </CardFooter>
         </Card>

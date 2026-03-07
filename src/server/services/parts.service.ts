@@ -9,22 +9,25 @@ export class PartsService {
       isActive: true,
     };
 
+    const deviceWhere: Prisma.DeviceWhereInput = { isActive: true };
+
     if (filters.device) {
-      whereClause.device = { slug: filters.device, isActive: true };
+      deviceWhere.slug = filters.device;
+    }
+
+    if (filters.brand) {
+      deviceWhere.brand = {
+        slug: filters.brand,
+        isActive: true,
+      };
+    }
+
+    if (filters.device || filters.brand) {
+      whereClause.device = deviceWhere;
     }
 
     if (filters.category) {
       whereClause.category = { slug: filters.category, isActive: true };
-    }
-
-    if (filters.brand) {
-      whereClause.device = {
-        ...(whereClause.device ?? {}),
-        brand: {
-          slug: filters.brand,
-          isActive: true,
-        },
-      };
     }
 
     if (filters.quality) {

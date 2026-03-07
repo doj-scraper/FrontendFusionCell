@@ -470,7 +470,7 @@ function SearchContent() {
                   <div className="absolute top-3 right-3 z-10">
                     <ResultTypeBadge type="part" />
                   </div>
-                  <PartCard part={part} />
+                  <PartCard part={{ ...part, category: part.category ? { id: part.category.slug, ...part.category } : null }} />
                 </div>
               ))}
             </div>
@@ -480,7 +480,7 @@ function SearchContent() {
           {activeFilter === "parts" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {paginatedResults.parts.map((part) => (
-                <PartCard key={part.id} part={part} />
+                <PartCard key={part.id} part={{ ...part, category: part.category ? { id: part.category.slug, ...part.category } : null }} />
               ))}
             </div>
           )}

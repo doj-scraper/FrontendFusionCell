@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-interface RouteParams {
-  params: {
+type RouteContext = {
+  params: Promise<{
     sku: string;
-  };
-}
+  }>;
+};
 
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(_request: Request, context: RouteContext) {
   try {
-    const { sku } = params;
+    const { sku } = await context.params;
 
     const part = await db.part.findFirst({
       where: {

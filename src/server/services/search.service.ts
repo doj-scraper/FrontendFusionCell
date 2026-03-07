@@ -21,33 +21,48 @@ export class SearchService {
       brands: [],
     };
 
+    // SEARCH PARTS WITH WEIGHTED MATCHING
     if (type === "all" || type === "parts") {
-      results.parts = await prisma.part.findMany({
+      // 1. EXACT SKU MATCH (HIGHEST WEIGHT)
+      const exactSku = await prisma.part.findMany({
+        where: { sku: { equals: normalizedQuery, mode: "insensitive" }, isActive: true },
+        include: { device: { include: { brand: true } }, category: true, inventory: true },
+      });
+
+      // 2. NAME PREFIX MATCH
+      const namePrefix = await prisma.part.findMany({
+        where: { 
+          name: { startsWith: normalizedQuery, mode: "insensitive" }, 
+          sku: { not: normalizedQuery },
+          isActive: true 
+        },
+        include: { device: { include: { brand: true } }, category: true, inventory: true },
+        take: limit,
+      });
+
+      // 3. CONTAINS MATCH (NAME, SKU, DESCRIPTION)
+      const containsMatch = await prisma.part.findMany({
         where: {
           OR: [
-            { sku: { contains: normalizedQuery, mode: "insensitive" } },
             { name: { contains: normalizedQuery, mode: "insensitive" } },
+            { sku: { contains: normalizedQuery, mode: "insensitive" } },
             { description: { contains: normalizedQuery, mode: "insensitive" } },
           ],
           isActive: true,
+          AND: [
+            { sku: { not: normalizedQuery } },
+            { name: { not: { startsWith: normalizedQuery, mode: "insensitive" } } }
+          ]
         },
-        include: {
-          device: {
-            include: {
-              brand: true,
-            },
-          },
-          category: true,
-        },
+        include: { device: { include: { brand: true } }, category: true, inventory: true },
         take: limit,
-        skip: offset,
-        orderBy: [
-          { isFeatured: "desc" },
-          { name: "asc" },
-        ],
       });
+
+      // Combine and deduplicate
+      results.parts = [...exactSku, ...namePrefix, ...containsMatch].slice(0, limit);
     }
 
+    // SEARCH DEVICES
     if (type === "all" || type === "devices") {
       results.devices = await prisma.device.findMany({
         where: {
@@ -59,15 +74,13 @@ export class SearchService {
         },
         include: {
           brand: true,
-          _count: {
-            select: { parts: true },
-          },
+          _count: { select: { parts: true } },
         },
         take: limit,
-        skip: offset,
       });
     }
 
+    // SEARCH BRANDS
     if (type === "all" || type === "brands") {
       results.brands = await prisma.brand.findMany({
         where: {
@@ -75,12 +88,9 @@ export class SearchService {
           isActive: true,
         },
         include: {
-          _count: {
-            select: { devices: true },
-          },
+          _count: { select: { devices: true } },
         },
         take: limit,
-        skip: offset,
       });
     }
 

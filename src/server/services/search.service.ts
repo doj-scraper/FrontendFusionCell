@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db";
-import { QualityGrade } from "@prisma/client";
 
 export interface SearchParams {
   query: string;
@@ -15,7 +14,7 @@ export class SearchService {
       return { parts: [], devices: [], brands: [] };
     }
 
-    const results: any = {
+    const results = {
       parts: [],
       devices: [],
       brands: [],

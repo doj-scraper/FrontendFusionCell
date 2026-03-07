@@ -1,0 +1,274 @@
+// FusionCell Prisma Schema v3.0
+// PostgreSQL (Neon) - Production ready
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// BRANDS
+// ============================================
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  logo        String?
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  devices     Device[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// ============================================
+// DEVICES
+// ============================================
+
+model Device {
+  id           String   @id @default(cuid())
+  brandId      String
+  name         String
+  slug         String   @unique
+  modelNumber  String?
+  image        String?
+  releaseYear  Int?
+  description  String?
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  brand        Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  parts        Part[]
+
+  @@index([brandId])
+  @@index([slug])
+  @@index([releaseYear])
+}
+
+// ============================================
+// PART CATEGORIES
+// ============================================
+
+model PartCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parts       Part[]
+
+  @@index([slug])
+}
+
+// ============================================
+// PARTS
+// ============================================
+
+model Part {
+  id           String   @id @default(cuid())
+  deviceId     String
+  categoryId   String?
+  sku          String   @unique
+  name         String
+  slug         String   @unique
+  description  String?
+  image        String?
+  images       String?  // JSON array
+  price        Float
+  comparePrice Float?
+  cost         Float?
+  quality      String?
+  color        String?
+  weight       Float?
+  barcode      String?
+  minOrderQty  Int      @default(5)
+  isFeatured   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  device       Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  category     PartCategory? @relation(fields: [categoryId], references: [id])
+  inventory    Inventory?
+
+  @@index([deviceId])
+  @@index([categoryId])
+  @@index([sku])
+  @@index([slug])
+  @@index([quality])
+  @@index([isFeatured])
+  @@index([isActive])
+}
+
+// ============================================
+// INVENTORY
+// ============================================
+
+model Inventory {
+  id           String   @id @default(cuid())
+  partId       String   @unique
+  quantity     Int      @default(0)
+  reserved     Int      @default(0)
+  reorderPoint Int      @default(10)
+  location     String?
+  lastRestock  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  part         Part     @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@index([partId])
+  @@index([location])
+}
+
+// ============================================
+// SUPPLIERS
+// ============================================
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String   @default("US")
+  website     String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// ============================================
+// USERS
+// ============================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  name          String?
+  company       String?
+  phone         String?
+  taxId         String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String   @default("US")
+  role          String   @default("customer")
+  isActive      Boolean  @default(true)
+  emailVerified DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders        Order[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+// ============================================
+// ORDERS
+// ============================================
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          String?
+  orderNumber     String   @unique
+  status          String   @default("pending")
+  subtotal        Float
+  tax             Float    @default(0)
+  shipping        Float    @default(0)
+  discount        Float    @default(0)
+  total           Float
+  shippingName    String?
+  shippingCompany String?
+  shippingAddr    String?
+  shippingCity    String?
+  shippingState   String?
+  shippingZip     String?
+  shippingCountry String?
+  shippingPhone   String?
+  billingName     String?
+  billingCompany  String?
+  billingAddr     String?
+  billingCity     String?
+  billingState    String?
+  billingZip      String?
+  billingCountry  String?
+  trackingNumber  String?
+  carrier         String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User?    @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  partId    String
+  sku       String
+  name      String
+  quality   String?
+  color     String?
+  price     Float
+  quantity  Int
+  total     Float
+  createdAt DateTime @default(now())
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// ============================================
+// SETTINGS
+// ============================================
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}

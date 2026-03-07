@@ -1,184 +1,56 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { SearchService } from "@/server/services/search.service";
+import { z } from "zod";
 
-export async function GET(request: Request) {
+const searchParamsSchema = z.object({
+  q: z.string().min(2),
+  type: z.enum(["all", "parts", "devices", "brands"]).optional().default("all"),
+  limit: z.coerce.number().min(1).max(100).optional().default(20),
+  offset: z.coerce.number().min(0).optional().default(0),
+});
+
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
-    const type = searchParams.get('type') || 'all'; // all, parts, devices, brands
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const query = searchParams.get("q");
+    const type = searchParams.get("type") || "all";
+    const limit = searchParams.get("limit") || "20";
+    const offset = searchParams.get("offset") || "0";
 
-    if (!query || query.trim().length < 2) {
+    const validatedParams = searchParamsSchema.safeParse({
+      q: query,
+      type,
+      limit,
+      offset,
+    });
+
+    if (!validatedParams.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Search query must be at least 2 characters',
+        { 
+          success: false, 
+          error: "Invalid search parameters", 
+          details: validatedParams.error.format() 
         },
         { status: 400 }
       );
     }
 
-    const searchTerm = query.trim().toLowerCase();
-    const results = {
-      parts: [] as unknown[],
-      devices: [] as unknown[],
-      brands: [] as unknown[],
-    };
-
-    // Search parts
-    if (type === 'all' || type === 'parts') {
-      const parts = await db.part.findMany({
-        where: {
-          isActive: true,
-          OR: [
-            { name: { contains: searchTerm } },
-            { sku: { contains: searchTerm } },
-            { description: { contains: searchTerm } },
-            { slug: { contains: searchTerm } },
-          ],
-        },
-        take: limit,
-        orderBy: [
-          { isFeatured: 'desc' },
-          { name: 'asc' },
-        ],
-        include: {
-          device: {
-            select: {
-              name: true,
-              slug: true,
-              brand: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
-              },
-            },
-          },
-          category: {
-            select: {
-              name: true,
-              slug: true,
-            },
-          },
-          inventory: {
-            select: {
-              quantity: true,
-              reserved: true,
-            },
-          },
-        },
-      });
-
-      results.parts = parts.map((part) => ({
-        id: part.id,
-        sku: part.sku,
-        name: part.name,
-        slug: part.slug,
-        price: part.price,
-        comparePrice: part.comparePrice,
-        image: part.image,
-        quality: part.quality,
-        device: part.device,
-        category: part.category,
-        available: part.inventory
-          ? part.inventory.quantity - part.inventory.reserved
-          : 0,
-      }));
-    }
-
-    // Search devices
-    if (type === 'all' || type === 'devices') {
-      const devices = await db.device.findMany({
-        where: {
-          isActive: true,
-          OR: [
-            { name: { contains: searchTerm } },
-            { modelNumber: { contains: searchTerm } },
-            { slug: { contains: searchTerm } },
-          ],
-        },
-        take: limit,
-        orderBy: { name: 'asc' },
-        include: {
-          brand: {
-            select: {
-              name: true,
-              slug: true,
-              logo: true,
-            },
-          },
-          _count: {
-            select: {
-              parts: {
-                where: {
-                  isActive: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      results.devices = devices.map((device) => ({
-        id: device.id,
-        name: device.name,
-        slug: device.slug,
-        modelNumber: device.modelNumber,
-        image: device.image,
-        releaseYear: device.releaseYear,
-        brand: device.brand,
-        partCount: device._count.parts,
-      }));
-    }
-
-    // Search brands
-    if (type === 'all' || type === 'brands') {
-      const brands = await db.brand.findMany({
-        where: {
-          isActive: true,
-          OR: [
-            { name: { contains: searchTerm } },
-            { slug: { contains: searchTerm } },
-          ],
-        },
-        take: limit,
-        orderBy: { name: 'asc' },
-        include: {
-          _count: {
-            select: {
-              devices: {
-                where: {
-                  isActive: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      results.brands = brands.map((brand) => ({
-        id: brand.id,
-        name: brand.name,
-        slug: brand.slug,
-        logo: brand.logo,
-        description: brand.description,
-        deviceCount: brand._count.devices,
-      }));
-    }
+    const results = await SearchService.search({
+      query: validatedParams.data.q,
+      type: validatedParams.data.type as any,
+      limit: validatedParams.data.limit,
+      offset: validatedParams.data.offset,
+    });
 
     return NextResponse.json({
       success: true,
       data: results,
-      query: searchTerm,
+      query: validatedParams.data.q,
     });
   } catch (error) {
-    console.error('Error performing search:', error);
+    console.error("Search API error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to perform search',
-      },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

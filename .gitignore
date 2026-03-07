@@ -49,3 +49,11 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Stale Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Reorganized Data
+/data/ingestion/
+

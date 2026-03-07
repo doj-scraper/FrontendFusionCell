@@ -95,5 +95,8 @@
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
   },
-  "packageManager": "npm@10"
+  "packageManager": "npm@10",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
 }

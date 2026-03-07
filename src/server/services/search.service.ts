@@ -14,7 +14,11 @@ export class SearchService {
       return { parts: [], devices: [], brands: [] };
     }
 
-    const results = {
+    const results: {
+      parts: any[];
+      devices: any[];
+      brands: any[];
+    } = {
       parts: [],
       devices: [],
       brands: [],
@@ -48,9 +52,9 @@ export class SearchService {
             { description: { contains: normalizedQuery, mode: "insensitive" } },
           ],
           isActive: true,
-          AND: [
-            { sku: { not: normalizedQuery } },
-            { name: { not: { startsWith: normalizedQuery, mode: "insensitive" } } }
+          NOT: [
+            { sku: { equals: normalizedQuery, mode: "insensitive" } },
+            { name: { startsWith: normalizedQuery, mode: "insensitive" } },
           ]
         },
         include: { device: { include: { brand: true } }, category: true, inventory: true },

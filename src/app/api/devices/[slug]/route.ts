@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-interface RouteParams {
-  params: {
+type RouteContext = {
+  params: Promise<{
     slug: string;
-  };
-}
+  }>;
+};
 
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(_request: Request, context: RouteContext) {
   try {
-    const { slug } = params;
+    const { slug } = await context.params;
 
     const device = await db.device.findFirst({
       where: {

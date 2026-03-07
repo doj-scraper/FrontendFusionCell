@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type QualityGrade } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -592,7 +592,7 @@ async function createPart({
   slug: string;
   price: number;
   comparePrice: number;
-  quality: string;
+  quality: QualityGrade;
   isFeatured: boolean;
   index: number;
 }) {

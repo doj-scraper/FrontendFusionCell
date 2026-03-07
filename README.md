@@ -43,6 +43,30 @@ npm run db:seed
 npm run dev
 ```
 
+
+## Vercel deployment checklist
+
+1. Push this repo to GitHub/GitLab/Bitbucket and import it into Vercel.
+2. In **Project Settings → Environment Variables**, set:
+   - `DATABASE_URL` = Neon **pooled** connection string (runtime app traffic).
+   - `DIRECT_URL` = Neon **direct** (non-pooled) connection string for Prisma CLI.
+   - `NEXTAUTH_URL` = your Vercel production URL (for example `https://your-project.vercel.app`).
+   - `NEXTAUTH_SECRET` = a long random secret (for example from `openssl rand -base64 32`).
+3. In Vercel **Build & Output Settings**, keep:
+   - Install Command: `npm install`
+   - Build Command: `npm run build`
+   - Output Directory: default (leave empty for Next.js)
+4. Redeploy after updating any environment variables.
+
+### Optional post-deploy DB sync
+
+Run schema sync from a trusted environment (local machine or CI) using the same env values:
+
+```bash
+npm run db:generate
+npm run db:push
+```
+
 ## Production-oriented commands
 
 ```bash

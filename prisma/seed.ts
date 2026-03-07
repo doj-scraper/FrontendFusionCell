@@ -331,7 +331,7 @@ async function main() {
       slug: `${device.slug}-screen-aftermarket`,
       price: screenBase * 0.6 * tierMultiplier,
       comparePrice: screenBase * 0.85 * tierMultiplier,
-      quality: 'Aftermarket',
+      quality: 'AFTERMARKET',
       isFeatured,
       index: partIndex++,
     });
@@ -361,7 +361,7 @@ async function main() {
       slug: `${device.slug}-charging-port`,
       price: chargingPrice,
       comparePrice: chargingPrice * 1.5,
-      quality: 'Aftermarket',
+      quality: 'AFTERMARKET',
       isFeatured: false,
       index: partIndex++,
     });
@@ -377,7 +377,7 @@ async function main() {
         slug: `${device.slug}-rear-glass`,
         price: rearGlassPrice,
         comparePrice: rearGlassPrice * 1.6,
-        quality: 'Aftermarket',
+        quality: 'AFTERMARKET',
         isFeatured: false,
         index: partIndex++,
       });
@@ -451,7 +451,7 @@ async function main() {
       slug: `${device.slug}-charging-port`,
       price: 12.99,
       comparePrice: 19.99,
-      quality: 'Aftermarket',
+      quality: 'AFTERMARKET',
       isFeatured: false,
       index: partIndex++,
     });
@@ -475,7 +475,7 @@ async function main() {
       slug: `${device.slug}-screen`,
       price: screenBase * tierMultiplier,
       comparePrice: screenBase * 1.4 * tierMultiplier,
-      quality: isRazr || isEdge ? 'OEM' : 'Aftermarket',
+      quality: isRazr || isEdge ? 'OEM' : 'AFTERMARKET',
       isFeatured: isRazr,
       index: partIndex++,
     });
@@ -541,7 +541,7 @@ async function main() {
       slug: `${device.slug}-charging-port`,
       price: 14.99,
       comparePrice: 22.99,
-      quality: 'Aftermarket',
+      quality: 'AFTERMARKET',
       isFeatured: false,
       index: partIndex++,
     });

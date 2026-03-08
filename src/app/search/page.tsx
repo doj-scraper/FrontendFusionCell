@@ -167,7 +167,7 @@ function NoResults({ query }: { query: string }) {
   return (
     <div className="text-center py-16">
       <div className="flex items-center justify-center mb-4">
-        <Sparkles className="w-16 h-16 text-muted-foreground/30" />
+        <Sparkles className="w-16 h-16 text-muted-foreground" />
       </div>
       <h2 className="text-xl font-semibold mb-2">No results found</h2>
       <p className="text-muted-foreground mb-6">
@@ -193,9 +193,9 @@ function NoResults({ query }: { query: string }) {
 // Result type badge
 function ResultTypeBadge({ type }: { type: "part" | "device" | "brand" }) {
   const config = {
-    part: { label: "Part", className: "bg-primary/10 text-primary border-primary/20" },
-    device: { label: "Device", className: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400" },
-    brand: { label: "Brand", className: "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400" },
+    part: { label: "Part", className: "bg-accent text-accent-foreground border-border" },
+    device: { label: "Device", className: "bg-secondary text-secondary-foreground border-border" },
+    brand: { label: "Brand", className: "bg-highlight-soft text-highlight-foreground border-border" },
   }
 
   const { label, className } = config[type]
@@ -363,7 +363,7 @@ function SearchContent() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search for parts, devices, or brands..."
-            className="pl-12 h-14 text-lg rounded-2xl border-2 focus-visible:ring-0 focus-visible:border-primary/50 shadow-sm"
+            className="h-14 rounded-xl border border-input pl-12 text-lg focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
           />
           {searchInput && (
             <button

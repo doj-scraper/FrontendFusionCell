@@ -125,7 +125,7 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-            <div className="bg-muted/30 rounded-xl p-8 h-80 flex items-center justify-center">
+            <div className="bg-muted rounded-xl p-8 h-80 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-6xl font-bold text-primary mb-2">FC</div>
                 <p className="text-muted-foreground">Est. 2014</p>
@@ -154,7 +154,7 @@ export default function AboutPage() {
         <section className="mb-20">
           <Card className="max-w-4xl mx-auto">
             <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-4">
                 <Target className="h-6 w-6 text-primary" />
               </div>
               <CardTitle className="text-2xl">Our Mission</CardTitle>
@@ -186,7 +186,7 @@ export default function AboutPage() {
             {companyValues.map((value) => (
               <Card key={value.title} className="text-center">
                 <CardHeader>
-                  <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-4">
                     <value.icon className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle className="text-lg">{value.title}</CardTitle>
@@ -218,7 +218,7 @@ export default function AboutPage() {
               <Card key={item.title}>
                 <CardContent className="p-6 flex gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
                       <item.icon className="h-5 w-5 text-primary" />
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export default function AboutPage() {
 
         {/* CTA Section */}
         <section className="text-center">
-          <Card className="bg-muted/30">
+          <Card className="bg-muted">
             <CardContent className="p-8 md:p-12">
               <h2 className="text-2xl md:text-3xl font-bold mb-4">
                 Ready to Partner with Us?

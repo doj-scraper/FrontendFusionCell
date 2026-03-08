@@ -37,8 +37,8 @@ export function DeviceCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50 group",
-        isSelected && "border-primary bg-accent/50",
+        "cursor-pointer transition-colors duration-fast ease-default hover:bg-accent group",
+        isSelected && "border-primary bg-primary text-primary-foreground",
         className
       )}
       onClick={onClick}
@@ -56,7 +56,7 @@ export function DeviceCard({
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           {/* Device Image */}
-          <div className="relative aspect-square w-full rounded-lg bg-secondary/50 overflow-hidden">
+          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
             {device.image ? (
               <img
                 src={device.image}
@@ -65,7 +65,7 @@ export function DeviceCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Smartphone className="w-12 h-12 text-muted-foreground/50" />
+                <Smartphone className="w-12 h-12 text-muted-foreground" />
               </div>
             )}
             {/* Parts Count Overlay */}

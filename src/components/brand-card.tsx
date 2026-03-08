@@ -45,8 +45,8 @@ export function BrandCard({
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50",
-        isSelected && "border-primary bg-accent/50",
+        "cursor-pointer transition-colors duration-fast ease-default hover:bg-accent group",
+        isSelected && "border-primary bg-primary text-primary-foreground",
         className
       )}
       onClick={onClick}
@@ -65,7 +65,7 @@ export function BrandCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Brand Logo/Icon */}
-            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-secondary">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-muted">
               {brand.logo ? (
                 <img
                   src={brand.logo}

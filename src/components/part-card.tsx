@@ -79,15 +79,15 @@ function StockBadge({ status }: { status: StockStatus }) {
   const config = {
     in_stock: {
       label: "In Stock",
-      className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
+      className: "bg-success text-success-foreground border-success/40",
     },
     low_stock: {
       label: "Low Stock",
-      className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
+      className: "bg-warning text-warning-foreground border-warning/40",
     },
     out_of_stock: {
       label: "Out of Stock",
-      className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
+      className: "bg-destructive text-destructive-foreground border-destructive/40",
     },
   }
 
@@ -118,7 +118,7 @@ export function PartCard({
   return (
     <Card
       className={cn(
-        "transition-all duration-200 hover:shadow-md",
+        "group transition-colors duration-fast ease-default hover:bg-accent",
         isOutOfStock && "opacity-75",
         className
       )}
@@ -126,7 +126,7 @@ export function PartCard({
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           {/* Part Image */}
-          <div className="relative aspect-square w-full rounded-lg bg-secondary/50 overflow-hidden">
+          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
             {part.image ? (
               <img
                 src={part.image}
@@ -135,14 +135,14 @@ export function PartCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Package className="w-12 h-12 text-muted-foreground/50" />
+                <Package className="w-12 h-12 text-muted-foreground" />
               </div>
             )}
             
             {/* Badges */}
             <div className="absolute top-2 left-2 flex flex-col gap-1">
               {part.isFeatured && (
-                <Badge className="text-xs bg-primary text-primary-foreground">
+                <Badge className="bg-highlight-soft text-xs text-highlight-foreground">
                   Featured
                 </Badge>
               )}

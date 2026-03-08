@@ -90,7 +90,8 @@ npm run db:seed
 - `DATABASE_URL` — app/runtime Prisma connection URL.
 - `DIRECT_URL` — direct Postgres URL for Prisma CLI operations (recommended for Neon non-pooled endpoint).
 - `NEXTAUTH_URL` — base app URL.
-- `NEXTAUTH_SECRET` — secret for NextAuth session/JWT encryption.
+- `NEXTAUTH_SECRET` — legacy fallback secret for NextAuth session/JWT encryption.
+- `AUTH_SECRET` — preferred secret for Auth.js session/JWT encryption.
 
 ## Prisma notes (Postgres/Neon)
 

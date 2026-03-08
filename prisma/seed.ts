@@ -1,4 +1,4 @@
-import { PrismaClient, type QualityGrade } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -143,7 +143,7 @@ async function main() {
   // ============================================
   // CREATE DEVICES
   // ============================================
-  
+
   // iPhone Devices
   const iphoneDevices = [
     { name: 'iPhone 11', slug: 'iphone-11', modelNumber: 'A2111', releaseYear: 2019 },
@@ -308,8 +308,7 @@ async function main() {
     const baseSku = device.slug.replace(/-/g, '').toUpperCase();
     const isFeatured = name.includes('14') || name.includes('15') || name.includes('16');
 
-    // Screen
-    const screenBase = isPro ? 89.99 : (isSE ? 49.99 : (isMini ? 59.99 : 69.99));
+    const screenBase = isPro ? 89.99 : isSE ? 49.99 : isMini ? 59.99 : 69.99;
     await createPart({
       deviceId: device.id,
       categoryId: screenCategory.id,
@@ -336,8 +335,7 @@ async function main() {
       index: partIndex++,
     });
 
-    // Battery
-    const batteryPrice = isPro || isMax ? 29.99 : (isSE ? 19.99 : (isMini ? 21.99 : 24.99));
+    const batteryPrice = isPro || isMax ? 29.99 : isSE ? 19.99 : isMini ? 21.99 : 24.99;
     await createPart({
       deviceId: device.id,
       categoryId: batteryCategory.id,
@@ -351,7 +349,6 @@ async function main() {
       index: partIndex++,
     });
 
-    // Charging Port
     const chargingPrice = isPro || isMax ? 16.99 : 14.99;
     await createPart({
       deviceId: device.id,
@@ -366,7 +363,6 @@ async function main() {
       index: partIndex++,
     });
 
-    // Rear Glass (not for SE)
     if (!isSE) {
       const rearGlassPrice = isPro || isMax ? 14.99 : 12.99;
       await createPart({
@@ -383,11 +379,12 @@ async function main() {
       });
     }
 
-    // Camera (for Pro models)
     if (isPro) {
       const yearMatch = device.name.match(/\d+/);
       const year = yearMatch ? parseInt(yearMatch[0]) : 14;
-      const cameraPrice = year >= 17 ? 179.99 : (year >= 16 ? 169.99 : (year >= 15 ? 159.99 : 149.99));
+      const cameraPrice =
+        year >= 17 ? 179.99 : year >= 16 ? 169.99 : year >= 15 ? 159.99 : 149.99;
+
       await createPart({
         deviceId: device.id,
         categoryId: cameraCategory.id,
@@ -411,11 +408,22 @@ async function main() {
     const isPlus = name.includes('+') && !isUltra;
     const isFold = name.includes('fold');
     const isFlip = name.includes('flip');
-    const isA = name.includes('a ') || name.includes('a1') || name.includes('a3') || name.includes('a5');
-    const tierMultiplier = isUltra ? 1.4 : (isFold ? 1.5 : (isFlip ? 1.2 : (isPlus ? 1.1 : (isA ? 0.7 : 1))));
+    const isA =
+      name.includes('a ') || name.includes('a1') || name.includes('a3') || name.includes('a5');
+    const tierMultiplier = isUltra
+      ? 1.4
+      : isFold
+        ? 1.5
+        : isFlip
+          ? 1.2
+          : isPlus
+            ? 1.1
+            : isA
+              ? 0.7
+              : 1;
     const baseSku = device.slug.replace(/-/g, '').toUpperCase();
 
-    const screenBase = isFold ? 149.99 : (isFlip ? 99.99 : (isUltra ? 109.99 : (isA ? 49.99 : 79.99)));
+    const screenBase = isFold ? 149.99 : isFlip ? 99.99 : isUltra ? 109.99 : isA ? 49.99 : 79.99;
     await createPart({
       deviceId: device.id,
       categoryId: screenCategory.id,
@@ -429,7 +437,7 @@ async function main() {
       index: partIndex++,
     });
 
-    const batteryPrice = isFold ? 34.99 : (isUltra ? 29.99 : (isA ? 18.99 : 24.99));
+    const batteryPrice = isFold ? 34.99 : isUltra ? 29.99 : isA ? 18.99 : 24.99;
     await createPart({
       deviceId: device.id,
       categoryId: batteryCategory.id,
@@ -463,10 +471,10 @@ async function main() {
     const name = device.name.toLowerCase();
     const isRazr = name.includes('razr');
     const isEdge = name.includes('edge');
-    const tierMultiplier = isRazr ? 1.3 : (isEdge ? 1.1 : 0.8);
+    const tierMultiplier = isRazr ? 1.3 : isEdge ? 1.1 : 0.8;
     const baseSku = device.slug.replace(/-/g, '').toUpperCase();
 
-    const screenBase = isRazr ? 119.99 : (isEdge ? 79.99 : 39.99);
+    const screenBase = isRazr ? 119.99 : isEdge ? 79.99 : 39.99;
     await createPart({
       deviceId: device.id,
       categoryId: screenCategory.id,
@@ -480,7 +488,7 @@ async function main() {
       index: partIndex++,
     });
 
-    const batteryPrice = isRazr ? 29.99 : (isEdge ? 24.99 : 14.99);
+    const batteryPrice = isRazr ? 29.99 : isEdge ? 24.99 : 14.99;
     await createPart({
       deviceId: device.id,
       categoryId: batteryCategory.id,
@@ -502,10 +510,10 @@ async function main() {
     const isPro = name.includes('pro');
     const isFold = name.includes('fold');
     const isA = name.includes('a');
-    const tierMultiplier = isFold ? 1.5 : (isPro ? 1.3 : (isA ? 0.8 : 1));
+    const tierMultiplier = isFold ? 1.5 : isPro ? 1.3 : isA ? 0.8 : 1;
     const baseSku = device.slug.replace(/-/g, '').toUpperCase();
 
-    const screenBase = isFold ? 179.99 : (isPro ? 99.99 : (isA ? 59.99 : 79.99));
+    const screenBase = isFold ? 179.99 : isPro ? 99.99 : isA ? 59.99 : 79.99;
     await createPart({
       deviceId: device.id,
       categoryId: screenCategory.id,
@@ -519,7 +527,7 @@ async function main() {
       index: partIndex++,
     });
 
-    const batteryPrice = isPro ? 29.99 : (isA ? 19.99 : 24.99);
+    const batteryPrice = isPro ? 29.99 : isA ? 19.99 : 24.99;
     await createPart({
       deviceId: device.id,
       categoryId: batteryCategory.id,
@@ -592,7 +600,7 @@ async function createPart({
   slug: string;
   price: number;
   comparePrice: number;
-  quality: QualityGrade;
+  quality: Prisma.$Enums.QualityGrade;
   isFeatured: boolean;
   index: number;
 }) {

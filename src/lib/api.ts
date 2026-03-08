@@ -1,49 +1,38 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
-export type ApiSuccessResponse<T> = {
-  success: true
-  data: T
-  requestId?: string
-}
+export type ApiSuccess<T> = {
+  success: true;
+  data: T;
+  requestId?: string;
+};
 
-export type ApiErrorResponse = {
-  success: false
+export type ApiError = {
+  success: false;
   error: {
-    code: string
-    message: string
-    details?: unknown
-  }
-  requestId?: string
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+  requestId?: string;
+};
+
+export function apiSuccess<T>(data: T, status = 200, requestId?: string) {
+  return NextResponse.json<ApiSuccess<T>>({ success: true, data, requestId }, { status });
 }
 
-export const apiSuccess = <T>(data: T, init?: { status?: number; requestId?: string }) =>
-  NextResponse.json<ApiSuccessResponse<T>>(
-    {
-      success: true,
-      data,
-      requestId: init?.requestId,
-    },
-    { status: init?.status ?? 200 },
-  )
-
-export const apiError = (
+export function apiError(
+  code: string,
   message: string,
-  init?: {
-    code?: string
-    details?: unknown
-    status?: number
-    requestId?: string
-  },
-) =>
-  NextResponse.json<ApiErrorResponse>(
+  status = 400,
+  details?: unknown,
+  requestId?: string,
+) {
+  return NextResponse.json<ApiError>(
     {
       success: false,
-      error: {
-        code: init?.code ?? 'INTERNAL_ERROR',
-        message,
-        details: init?.details,
-      },
-      requestId: init?.requestId,
+      error: { code, message, details },
+      requestId,
     },
-    { status: init?.status ?? 500 },
-  )
+    { status },
+  );
+}

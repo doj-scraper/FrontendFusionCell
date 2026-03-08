@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-type RouteContext = {
+type RouteParams = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(_request: Request, { params }: RouteParams) {
   try {
-    const { slug } = await context.params;
+    const { slug } = await params;
 
     const brand = await db.brand.findFirst({
       where: {
@@ -21,10 +21,7 @@ export async function GET(_request: Request, context: RouteContext) {
           where: {
             isActive: true,
           },
-          orderBy: [
-            { sortOrder: 'asc' },
-            { name: 'asc' },
-          ],
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
           include: {
             _count: {
               select: {
@@ -72,6 +69,7 @@ export async function GET(_request: Request, context: RouteContext) {
     });
   } catch (error) {
     console.error('Error fetching brand:', error);
+
     return NextResponse.json(
       {
         success: false,

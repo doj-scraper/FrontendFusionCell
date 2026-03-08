@@ -117,3 +117,165 @@ If your provider does not require a separate direct URL, you can set `DIRECT_URL
 - `npm run db:migrate` — run/create migrations.
 - `npm run db:seed` — seed sample data.
 - `npm run db:studio` — open Prisma Studio.
+
+## Commerce implementation roadmap (production-first)
+
+This is the repo-ready plan for implementing customer accounts, cart, checkout, and order processing in a safe sequence.
+
+### Phase 0 — Platform foundation
+
+**Goal:** create shared infrastructure before feature work.
+
+**Files to add/update (TypeScript):**
+
+- `src/lib/env.ts` — environment validation (`AUTH_SECRET`, Stripe, DB URLs, app URL).
+- `src/lib/prisma.ts` — Prisma singleton with production-safe logging.
+- `src/lib/auth.ts` — centralized Auth.js configuration.
+- `src/lib/stripe.ts` — Stripe server client singleton.
+- `src/lib/logger.ts` — structured logger helper.
+- `src/lib/api.ts` — normalized API success/error response helpers.
+- `src/lib/validations/auth.ts`
+- `src/lib/validations/cart.ts`
+- `src/lib/validations/checkout.ts`
+- `src/middleware.ts` — request ID/header correlation and protected-route guardrails.
+
+**Acceptance criteria:**
+
+- App fails fast on missing/invalid required env vars.
+- API responses follow one consistent shape.
+- Shared validation and logging conventions exist before feature endpoints.
+
+### Phase 1 — Identity & account foundation
+
+**Goal:** registration, login, and protected account sessions.
+
+**Files to add/update (TypeScript):**
+
+- `prisma/schema.prisma` — `User`, `UserRole` enum, and timestamp fields.
+- `src/app/api/auth/[...nextauth]/route.ts` — Auth.js handlers.
+- `src/app/api/auth/register/route.ts` — register endpoint.
+- `src/app/(shop)/register/page.tsx` *(or `src/app/register/page.tsx`)* — register UI.
+- `src/app/(shop)/login/page.tsx` *(or `src/app/login/page.tsx`)* — login UI.
+- `src/app/account/page.tsx` — protected account page.
+- `src/services/auth/register.service.ts`
+- `src/services/auth/login.service.ts`
+
+**Acceptance criteria:**
+
+- Register/login/logout works.
+- Passwords are hashed only (never stored in plaintext).
+- Session persists and `/account` routes are protected.
+- Auth endpoints have explicit rate limits.
+
+### Phase 2 — Cart system
+
+**Goal:** durable cart behavior for guest + authenticated users.
+
+**Files to add/update (TypeScript):**
+
+- `prisma/schema.prisma` — `Cart`, `CartItem`, `CartStatus` enum.
+- `src/app/api/cart/route.ts` — get active cart.
+- `src/app/api/cart/items/route.ts` — add/set/remove item actions.
+- `src/services/cart/cart.service.ts` — merge/reprice business logic.
+- `src/lib/validations/cart.ts` — typed cart action payloads.
+- `src/app/cart/page.tsx` — cart UI and summaries.
+
+**Guest cart decision (recommended):**
+
+- Use HTTP-only signed cookie with `guestCartId`.
+- Persist guest cart rows in DB.
+- Merge guest cart into active user cart on login, then invalidate cookie.
+
+**Acceptance criteria:**
+
+- One active cart per user.
+- Cart totals are recomputed server-side.
+- Inactive/missing products are blocked or pruned.
+- Guest cart merge is deterministic and tested.
+
+### Phase 3 — Checkout & Payment Intent
+
+**Goal:** validated checkout inputs and server-created Stripe payment intents.
+
+**Files to add/update (TypeScript):**
+
+- `prisma/schema.prisma` — `Address`, `Order`, `OrderItem`, `PaymentStatus`, `OrderStatus`.
+- `src/app/api/checkout/intent/route.ts` — create payment intent.
+- `src/services/checkout/checkout.service.ts` — repricing, pending order shell creation.
+- `src/app/checkout/page.tsx` — shipping/billing form + Stripe Payment Element.
+- `src/components/checkout/checkout-form.tsx`
+- `src/components/checkout/payment-element.tsx`
+- `src/lib/validations/checkout.ts`
+
+**Required behavior:**
+
+- Always create/update a pending order shell before returning client secret.
+- Re-query products and recompute totals server-side.
+- Store `stripePaymentIntentId` on the pending order.
+- Keep shipping/tax logic explicit (MVP: flat shipping, tax stubbed to `0`).
+
+### Phase 4 — Webhook-driven order finalization & history
+
+**Goal:** finalize orders from Stripe webhooks, not client redirects.
+
+**Files to add/update (TypeScript):**
+
+- `src/app/api/webhooks/stripe/route.ts` — signature-verified webhook handler.
+- `src/services/orders/order-finalization.service.ts` — transaction-wrapped finalization.
+- `prisma/schema.prisma` — processed webhook event table (idempotency) and constraints.
+- `src/app/account/orders/page.tsx` — order history UI.
+- `src/app/account/addresses/page.tsx` — address management UI.
+
+**Required behavior:**
+
+- Verify webhook signature for every event.
+- Handle at least `payment_intent.succeeded` and `payment_intent.payment_failed`.
+- Enforce idempotency via processed-event table + unique payment intent constraint.
+- Finalization writes must be transactional.
+
+## API response contract (recommended)
+
+Use one shared response format in all route handlers:
+
+```ts
+type ApiSuccess<T> = {
+  success: true;
+  data: T;
+  requestId?: string;
+};
+
+type ApiError = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
+  requestId?: string;
+};
+```
+
+## Testing checklist by phase
+
+- Phase 0
+  - `npm run lint`
+  - Environment validation tests for `src/lib/env.ts`
+- Phase 1
+  - Auth validator unit tests
+  - API integration tests for register/login/session
+- Phase 2
+  - Cart action schema tests
+  - Cart merge/reprice integration tests
+- Phase 3
+  - Checkout intent integration tests (empty cart, invalid items, amount mismatch)
+- Phase 4
+  - Webhook signature verification tests
+  - Idempotency tests for duplicate event delivery
+  - End-to-end happy path: register → cart → checkout → webhook → account orders
+
+Recommended CI minimum before merge:
+
+```bash
+npm run lint
+npm run build
+```

@@ -52,6 +52,9 @@ npm run dev
    - `DIRECT_URL` = Neon **direct** (non-pooled) connection string for Prisma CLI.
    - `NEXTAUTH_URL` = your Vercel production URL (for example `https://your-project.vercel.app`).
    - `NEXTAUTH_SECRET` = a long random secret (for example from `openssl rand -base64 32`).
+   - `STRIPE_SECRET_KEY` = Stripe secret key (`sk_...`) for server-side Stripe SDK usage.
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` = Stripe publishable key (`pk_...`) for client integrations.
+   - `STRIPE_WEBHOOK_SECRET` = Stripe webhook signing secret (`whsec_...`).
 3. In Vercel **Build & Output Settings**, keep:
    - Install Command: `npm install`
    - Build Command: `npm run build`
@@ -91,6 +94,10 @@ npm run db:seed
 - `DIRECT_URL` — direct Postgres URL for Prisma CLI operations (recommended for Neon non-pooled endpoint).
 - `NEXTAUTH_URL` — base app URL.
 - `NEXTAUTH_SECRET` — secret for NextAuth session/JWT encryption.
+- `STRIPE_SECRET_KEY` — Stripe secret key for server-side API calls.
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — Stripe publishable key for client-side SDK setup.
+- `STRIPE_WEBHOOK_SECRET` — webhook signature secret used for Stripe event verification.
+- `NODE_ENV` — app runtime environment (`development`, `test`, or `production`).
 
 ## Prisma notes (Postgres/Neon)
 

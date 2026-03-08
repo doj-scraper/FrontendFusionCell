@@ -115,7 +115,7 @@ function FeaturedProducts() {
       {parts.map((part) => (
         <Card
           key={part.id}
-          className="overflow-hidden group hover:shadow-lg transition-shadow"
+          className="overflow-hidden group hover:bg-accent transition-colors duration-fast ease-default"
         >
           <Link href={`/part/${part.sku}`} className="block">
             <div className="aspect-square bg-muted relative overflow-hidden">
@@ -127,7 +127,7 @@ function FeaturedProducts() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Package className="h-16 w-16 text-muted-foreground/30" />
+                  <Package className="h-16 w-16 text-muted-foreground" />
                 </div>
               )}
               {part.quality && (
@@ -206,7 +206,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary/5 to-background py-16 md:py-24">
+      <section className="bg-accent py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
@@ -249,7 +249,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 md:py-20 bg-muted/30">
+      <section className="py-16 md:py-20 bg-muted">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
             <div>
@@ -287,7 +287,7 @@ export default function HomePage() {
             {whyChooseUsFeatures.map((feature) => (
               <Card key={feature.title} className="text-center">
                 <CardHeader>
-                  <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-4">
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -319,7 +319,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="secondary"
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-background text-primary hover:bg-accent"
                 asChild
               >
                 <Link href="/contact">Contact Sales</Link>
@@ -327,7 +327,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white text-white hover:bg-white/10"
+                className="border-border text-foreground hover:bg-accent"
                 asChild
               >
                 <Link href="/about">Learn More About Us</Link>

@@ -173,21 +173,21 @@ export default function CheckoutPage() {
 
         {/* Security Features */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
             <ShieldCheck className="h-8 w-8 text-primary" />
             <div>
               <p className="font-semibold">Secure Checkout</p>
               <p className="text-sm text-muted-foreground">SSL encrypted payment</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
             <Lock className="h-8 w-8 text-primary" />
             <div>
               <p className="font-semibold">Privacy Protected</p>
               <p className="text-sm text-muted-foreground">Your data is safe with us</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
             <CheckCircle2 className="h-8 w-8 text-primary" />
             <div>
               <p className="font-semibold">Quality Guaranteed</p>

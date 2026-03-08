@@ -67,11 +67,17 @@ export class PartsService {
               id: true,
               name: true,
               slug: true,
-              brand: { select: { id: true, name: true, slug: true } },
+              brand: {
+                select: { id: true, name: true, slug: true },
+              },
             },
           },
-          category: { select: { id: true, name: true, slug: true, icon: true } },
-          inventory: { select: { quantity: true, reserved: true, location: true } },
+          category: {
+            select: { id: true, name: true, slug: true, icon: true },
+          },
+          inventory: {
+            select: { quantity: true, reserved: true, location: true },
+          },
         },
       }),
     ]);
@@ -85,8 +91,8 @@ export class PartsService {
         name: part.name,
         slug: part.slug,
         description: part.description,
-        price: part.price,
-        comparePrice: part.comparePrice,
+        price: Number(part.price),
+        comparePrice: part.comparePrice ? Number(part.comparePrice) : null,
         image: part.image,
         quality: part.quality,
         color: part.color,
@@ -98,7 +104,8 @@ export class PartsService {
           ? {
               quantity: part.inventory.quantity,
               reserved: part.inventory.reserved,
-              available: part.inventory.quantity - part.inventory.reserved,
+              available:
+                part.inventory.quantity - part.inventory.reserved,
               location: part.inventory.location,
             }
           : null,

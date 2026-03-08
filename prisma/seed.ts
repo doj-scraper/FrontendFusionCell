@@ -600,7 +600,7 @@ async function createPart({
   slug: string;
   price: number;
   comparePrice: number;
-  quality: quality: 'OEM' | 'PREMIUM' | 'AFTERMARKET' | 'REFURBISHED' | 'USED';
+  quality: 'OEM' | 'PREMIUM' | 'AFTERMARKET' | 'REFURBISHED' | 'USED';
   isFeatured: boolean;
   index: number;
 }) {

@@ -218,35 +218,43 @@ export function CheckoutForm() {
 
   const loadData = async () => {
     setIsLoading(true)
+    setError(null)
 
-    const [cartResponse, addressResponse] = await Promise.all([
-      fetch('/api/cart'),
-      fetch('/api/account/addresses'),
-    ])
+    try {
+      const [cartResponse, addressResponse] = await Promise.all([
+        fetch('/api/cart'),
+        fetch('/api/account/addresses'),
+      ])
 
-    const cartPayload = (await cartResponse.json()) as {
-      success: boolean
-      data: CartSummary
-    }
-    const addressPayload = (await addressResponse.json()) as {
-      success: boolean
-      data: Address[]
-    }
-
-    if (cartPayload.success) {
-      setCart(cartPayload.data)
-    }
-
-    if (addressPayload.success) {
-      setAddresses(addressPayload.data)
-      const defaultAddress = addressPayload.data.find((item) => item.isDefault) ?? addressPayload.data[0]
-      if (defaultAddress) {
-        setSelectedShippingAddressId(defaultAddress.id)
-        setSelectedBillingAddressId(defaultAddress.id)
+      const cartPayload = (await cartResponse.json()) as {
+        success: boolean
+        data: CartSummary
       }
-    }
+      const addressPayload = (await addressResponse.json()) as {
+        success: boolean
+        data: Address[]
+        error?: { code?: string }
+      }
 
-    setIsLoading(false)
+      if (cartPayload.success) {
+        setCart(cartPayload.data)
+      }
+
+      if (addressPayload.success) {
+        setAddresses(addressPayload.data)
+        const defaultAddress = addressPayload.data.find((item) => item.isDefault) ?? addressPayload.data[0]
+        if (defaultAddress) {
+          setSelectedShippingAddressId(defaultAddress.id)
+          setSelectedBillingAddressId(defaultAddress.id)
+        }
+      } else if (addressPayload.error?.code !== 'UNAUTHORIZED') {
+        setError('Unable to load your saved addresses right now.')
+      }
+    } catch {
+      setError('Unable to load checkout details. Please refresh and try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -266,33 +274,37 @@ export function CheckoutForm() {
     setIsCreatingIntent(true)
     setError(null)
 
-    const response = await fetch('/api/checkout/intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        cartId: cart.id,
-        email,
-        shippingAddressId: selectedShippingAddressId,
-        billingAddressId: useShippingAsBilling
-          ? selectedShippingAddressId
-          : selectedBillingAddressId,
-      }),
-    })
+    try {
+      const response = await fetch('/api/checkout/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartId: cart.id,
+          email,
+          shippingAddressId: selectedShippingAddressId,
+          billingAddressId: useShippingAsBilling
+            ? selectedShippingAddressId
+            : selectedBillingAddressId,
+        }),
+      })
 
-    const payload = (await response.json()) as {
-      success: boolean
-      data: CheckoutIntentResponse
-      error?: { message?: string }
-    }
+      const payload = (await response.json()) as {
+        success: boolean
+        data: CheckoutIntentResponse
+        error?: { message?: string }
+      }
 
-    if (!payload.success) {
-      setError(payload.error?.message ?? 'Unable to initialize payment intent.')
+      if (!payload.success) {
+        setError(payload.error?.message ?? 'Unable to initialize payment intent.')
+        return
+      }
+
+      setIntent(payload.data)
+    } catch {
+      setError('Unable to initialize payment intent.')
+    } finally {
       setIsCreatingIntent(false)
-      return
     }
-
-    setIntent(payload.data)
-    setIsCreatingIntent(false)
   }
 
   const createAddress = async (event: FormEvent<HTMLFormElement>) => {
@@ -300,29 +312,33 @@ export function CheckoutForm() {
     setIsSavingAddress(true)
     setError(null)
 
-    const response = await fetch('/api/account/addresses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newAddress),
-    })
+    try {
+      const response = await fetch('/api/account/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAddress),
+      })
 
-    const payload = (await response.json()) as {
-      success: boolean
-      data: Address
-      error?: { message?: string }
-    }
+      const payload = (await response.json()) as {
+        success: boolean
+        data: Address
+        error?: { message?: string }
+      }
 
-    if (!payload.success) {
-      setError(payload.error?.message ?? 'Unable to save address.')
+      if (!payload.success) {
+        setError(payload.error?.message ?? 'Unable to save address.')
+        return
+      }
+
+      setAddresses((previous) => [payload.data, ...previous])
+      setSelectedShippingAddressId(payload.data.id)
+      setSelectedBillingAddressId(payload.data.id)
+      setNewAddress(defaultAddressInput)
+    } catch {
+      setError('Unable to save address.')
+    } finally {
       setIsSavingAddress(false)
-      return
     }
-
-    setAddresses((previous) => [payload.data, ...previous])
-    setSelectedShippingAddressId(payload.data.id)
-    setSelectedBillingAddressId(payload.data.id)
-    setNewAddress(defaultAddressInput)
-    setIsSavingAddress(false)
   }
 
   if (isLoading) {

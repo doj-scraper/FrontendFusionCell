@@ -1,0 +1,8 @@
+# Global fallback ownership
+* @frontendfusioncell/platform
+
+# API and server ownership boundaries
+/src/app/api/ @frontendfusioncell/platform
+/src/server/services/ @frontendfusioncell/platform
+/src/server/validators/ @frontendfusioncell/platform
+/docs/engineering/ @frontendfusioncell/platform

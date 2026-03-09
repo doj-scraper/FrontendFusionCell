@@ -125,6 +125,15 @@ If your provider does not require a separate direct URL, you can set `DIRECT_URL
 - `npm run db:seed` — seed sample data.
 - `npm run db:studio` — open Prisma Studio.
 
+## New commerce APIs (phase 3/4 hardening)
+
+- `POST /api/checkout/intent` — authenticated checkout intent creation using selected saved addresses and server-side repricing.
+- `POST /api/webhooks/stripe` — Stripe signature-verified webhook finalization endpoint.
+- `GET|POST /api/account/addresses` — list and create customer-owned addresses.
+- `PATCH|DELETE /api/account/addresses/:addressId` — update/delete customer-owned address.
+- `POST /api/account/addresses/:addressId/default` — set default address atomically.
+- `GET /api/ops/metrics` — authenticated operational counter snapshot (webhook volume/failures/divergence).
+
 ## Commerce implementation roadmap (production-first)
 
 This is the repo-ready plan for implementing customer accounts, cart, checkout, and order processing in a safe sequence.

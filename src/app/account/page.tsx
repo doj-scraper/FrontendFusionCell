@@ -11,21 +11,25 @@ const accountFeatureCards = [
     title: "Order History",
     description: "Track and review your past wholesale orders.",
     icon: Package,
+    href: "/account/orders",
   },
   {
-    title: "Saved Items",
-    description: "Keep commonly ordered parts ready for faster checkout.",
+    title: "Addresses",
+    description: "Maintain shipping and billing addresses for rapid checkout.",
     icon: Heart,
+    href: "/account/addresses",
   },
   {
     title: "Account Settings",
     description: "Maintain contact info and business details in one place.",
     icon: Settings,
+    href: "/account",
   },
   {
     title: "Wholesale Profile",
     description: "Manage your repair shop profile and purchasing preferences.",
     icon: Building2,
+    href: "/account",
   },
 ];
 
@@ -72,7 +76,7 @@ export default async function AccountPage() {
               {accountFeatureCards.map((feature) => {
                 const Icon = feature.icon;
                 return (
-                  <div key={feature.title} className="flex items-start gap-3 rounded-lg border border-border p-4">
+                  <Link href={feature.href} key={feature.title} className="flex items-start gap-3 rounded-lg border border-border p-4 transition hover:border-violet-400">
                     <div className="rounded-md bg-violet-100 p-2 text-violet-800">
                       <Icon className="h-4 w-4" />
                     </div>
@@ -80,7 +84,7 @@ export default async function AccountPage() {
                       <p className="font-medium">{feature.title}</p>
                       <p className="text-sm text-muted-foreground">{feature.description}</p>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

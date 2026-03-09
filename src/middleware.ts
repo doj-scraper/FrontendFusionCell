@@ -5,7 +5,7 @@ import { apiError } from '@/lib/api'
 
 const REQUEST_ID_HEADER = 'x-request-id'
 const PROTECTED_PAGE_PATHS = ['/account', '/checkout']
-const PROTECTED_API_PREFIXES = ['/api/cart', '/api/checkout']
+const PROTECTED_API_PREFIXES = ['/api/cart', '/api/checkout', '/api/account', '/api/ops']
 const AUTH_COOKIE_NAMES = ['next-auth.session-token', '__Secure-next-auth.session-token']
 
 const isProtectedPagePath = (pathname: string) =>
@@ -30,11 +30,13 @@ export function middleware(request: NextRequest) {
 
   if (!hasSessionCookie(request)) {
     if (isProtectedApiPath(pathname)) {
-      const response = apiError('Authentication required', {
-        code: 'UNAUTHORIZED',
-        status: 401,
+      const response = apiError(
+        'UNAUTHORIZED',
+        'Authentication required',
+        401,
+        undefined,
         requestId,
-      })
+      )
       response.headers.set(REQUEST_ID_HEADER, requestId)
       return response
     }

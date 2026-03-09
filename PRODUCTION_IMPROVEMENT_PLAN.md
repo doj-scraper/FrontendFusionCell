@@ -61,6 +61,8 @@ This plan sequences the 10 requested improvements into integrated, production-re
   - API route smoke tests
   - validator/service tests for auth/cart/checkout
   - one critical checkout happy-path E2E
+- Observability baseline: request ID middleware, route latency histograms
+  (full dashboarding deferred to Phase 5)
 
 ### Acceptance Criteria
 
@@ -91,7 +93,7 @@ This plan sequences the 10 requested improvements into integrated, production-re
   - Enable `noImplicitAny: true` in branch.
   - Fix by domain (auth → cart → checkout → shared libs).
   - Prefer explicit DTO/types in validators/services.
-
+-- Auth code written with types-first; Phase 2 lint pass validates it
 ### Acceptance Criteria
 
 - `npm run lint` passes with critical rules enabled.
@@ -173,7 +175,7 @@ This plan sequences the 10 requested improvements into integrated, production-re
 - Redis decision:
   - Evaluate for rate-limit store + hot-read caching + job coordination.
   - Add ADR documenting adoption criteria, costs, and operational burden.
-
+Retrospective: compare observed latencies/errors to Phase 1 baseline
 ### Acceptance Criteria
 
 - Dashboard/report exists for p95 latency, DB slow queries, and error rates.

@@ -24,11 +24,21 @@ enum UserRole {
 
 enum OrderStatus {
   PENDING
+  PAYMENT_FAILED
+  PAID
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
   REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  REQUIRES_ACTION
+  SUCCEEDED
+  FAILED
+  CANCELED
 }
 
 enum CartStatus {
@@ -225,10 +235,36 @@ model User {
 
   orders        Order[]
   carts         Cart[]
+  addresses     Address[]
 
   @@index([email])
   @@index([role])
   @@index([isActive])
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  label       String?
+  fullName    String
+  company     String?
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  postalCode  String
+  country     String   @default("US")
+  phone       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingForOrders Order[]  @relation("ShippingAddress")
+  billingForOrders  Order[]  @relation("BillingAddress")
+
+  @@index([userId, isDefault])
+  @@index([userId, createdAt])
 }
 
 model Cart {
@@ -278,6 +314,10 @@ model Order {
   userId          String?
   orderNumber     String      @unique
   status          OrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  stripePaymentIntentId String? @unique
+  shippingAddressId String?
+  billingAddressId String?
   subtotal        Decimal     @db.Decimal(12, 2)
   tax             Decimal     @db.Decimal(10, 2) @default(0)
   shipping        Decimal     @db.Decimal(10, 2) @default(0)
@@ -308,11 +348,14 @@ model Order {
 
   user            User?       @relation(fields: [userId], references: [id])
   items           OrderItem[]
+  shippingAddress Address?    @relation("ShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  billingAddress  Address?    @relation("BillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
   @@index([orderNumber])
   @@index([createdAt])
+  @@index([stripePaymentIntentId])
 }
 
 model OrderItem {
@@ -346,4 +389,16 @@ model SiteSetting {
   updatedAt   DateTime @updatedAt
 
   @@index([key])
+}
+
+model ProcessedStripeEvent {
+  id               String   @id @default(cuid())
+  eventId          String   @unique
+  eventType        String
+  stripeCreatedAt  DateTime
+  paymentIntentId  String?
+  processedAt      DateTime @default(now())
+
+  @@index([eventType])
+  @@index([paymentIntentId])
 }

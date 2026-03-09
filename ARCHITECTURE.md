@@ -98,6 +98,11 @@ Current API endpoints are organized under `src/app/api`:
 - `filters`
 - `search`
 - `contact`
+- `cart`, `cart/items`
+- `checkout/intent`
+- `webhooks/stripe`
+- `account/addresses`, `account/addresses/[addressId]`, `account/addresses/[addressId]/default`
+- `ops/metrics`
 
 Design expectations:
 
@@ -147,6 +152,14 @@ Production UI should follow:
 ---
 
 ## 8) Validation, Error Handling, and Observability
+
+
+### Checkout and order safety
+
+- Checkout intents are created from server-repriced cart state only.
+- Saved address IDs are ownership-validated server-side before use in an order shell.
+- Stripe webhook finalization is idempotent and transaction-wrapped.
+- Webhook counters and payment/order divergence signals are recorded for operational visibility.
 
 ### Validation
 

@@ -295,3 +295,13 @@ Recommended CI minimum before merge:
 npm run lint
 npm run build
 ```
+
+## Production-hardening additions
+
+- Test infrastructure added with Vitest (`npm run test`) and Playwright (`npm run test:e2e`).
+- CI workflows added under `.github/workflows/` for lint, typecheck, build, unit tests, and E2E execution.
+- `noImplicitAny` is enabled in `tsconfig.json` for stricter TypeScript safety.
+- Auth now includes Credentials and optional GitHub OAuth provider support (env-gated).
+- API security hardening includes request-id propagation, CSP/security headers, CSRF checks, and payload sanitization at API boundaries.
+- OpenAPI starter spec is available at `GET /api/docs`.
+- Prisma datasource now includes `directUrl` support for production-safe migration/introspection separation.

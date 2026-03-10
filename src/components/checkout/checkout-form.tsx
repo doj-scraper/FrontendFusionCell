@@ -228,7 +228,9 @@ function CheckoutInner({
 }
 
 export function CheckoutForm() {
-  const { data: session, status } = useSession()
+  const sessionContext = useSession()
+  const session = sessionContext?.data
+  const status = sessionContext?.status
   const isAuthenticated = !!session?.user
   const [cart, setCart] = useState<CartSummary | null>(null)
   const [addresses, setAddresses] = useState<Address[]>([])

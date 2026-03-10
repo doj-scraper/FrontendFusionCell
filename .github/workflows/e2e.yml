@@ -10,7 +10,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fusioncell
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/fusioncell
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: 12345678901234567890123456789012
+      NEXTAUTH_SECRET: "ci-test-next-auth-secret-key-32-chars-long"
       STRIPE_SECRET_KEY: sk_test_ci
       STRIPE_WEBHOOK_SECRET: whsec_ci
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci

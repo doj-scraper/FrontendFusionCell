@@ -248,3 +248,12 @@ npm run test
 ```
 
 (If `npm run test` is not configured yet, add Vitest/Jest with coverage targets.)
+
+## Production platform controls
+
+- **Testing & CI:** Vitest + Playwright and GitHub Actions enforce lint/typecheck/build/test quality gates.
+- **Static safety:** TypeScript strictness now includes `noImplicitAny`.
+- **Auth:** NextAuth credentials provider and optional env-gated GitHub OAuth provider are configured with typed JWT/session claims.
+- **Security:** Request IDs, CSP, and core security headers are enforced in middleware; CSRF validation is available for mutating routes.
+- **Observability:** In-memory monitoring records route latencies, p95 approximations, webhook counters, and 429 totals for `/api/ops/metrics`.
+- **Data layer consistency:** Prisma datasource now declares `directUrl` aligned with production migration workflows.

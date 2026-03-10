@@ -1,55 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-import { apiError } from '@/lib/api'
-
-const REQUEST_ID_HEADER = 'x-request-id'
-const PROTECTED_PAGE_PATHS = ['/account', '/checkout']
-const PROTECTED_API_PREFIXES = ['/api/cart', '/api/checkout', '/api/account', '/api/ops']
-const AUTH_COOKIE_NAMES = ['next-auth.session-token', '__Secure-next-auth.session-token']
-
-const isProtectedPagePath = (pathname: string) =>
-  PROTECTED_PAGE_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  )
-
-const isProtectedApiPath = (pathname: string) =>
-  PROTECTED_API_PREFIXES.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  )
-
-const hasSessionCookie = (request: NextRequest) =>
-  AUTH_COOKIE_NAMES.some((cookieName) => Boolean(request.cookies.get(cookieName)?.value))
+const buildCsp = () =>
+  [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline'",
+    "connect-src 'self' https:",
+  ].join('; ')
 
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
   const requestHeaders = new Headers(request.headers)
-  const requestId = requestHeaders.get(REQUEST_ID_HEADER) ?? crypto.randomUUID()
-
-  requestHeaders.set(REQUEST_ID_HEADER, requestId)
-
-  if (!hasSessionCookie(request)) {
-    if (isProtectedApiPath(pathname)) {
-      const response = apiError(
-        'UNAUTHORIZED',
-        'Authentication required',
-        401,
-        undefined,
-        requestId,
-      )
-      response.headers.set(REQUEST_ID_HEADER, requestId)
-      return response
-    }
-
-    if (isProtectedPagePath(pathname)) {
-      const loginUrl = new URL('/', request.url)
-      loginUrl.searchParams.set('next', pathname)
-
-      const response = NextResponse.redirect(loginUrl)
-      response.headers.set(REQUEST_ID_HEADER, requestId)
-      return response
-    }
-  }
+  const requestId = requestHeaders.get('x-request-id') ?? crypto.randomUUID()
+  requestHeaders.set('x-request-id', requestId)
 
   const response = NextResponse.next({
     request: {
@@ -57,10 +26,15 @@ export function middleware(request: NextRequest) {
     },
   })
 
-  response.headers.set(REQUEST_ID_HEADER, requestId)
+  response.headers.set('x-request-id', requestId)
+  response.headers.set('Content-Security-Policy', buildCsp())
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/auth).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }

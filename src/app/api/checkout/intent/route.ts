@@ -45,8 +45,8 @@ export async function POST(request: Request) {
 
     const result = await createCheckoutIntent(userId, {
       ...input,
-      // Ensure guestCartId is passed for guest checkout
-      guestCartId: input.guestCartId ?? guestCartId,
+      // Ensure guestCartId is passed for guest checkout (convert null to undefined)
+      guestCartId: input.guestCartId ?? guestCartId ?? undefined,
     })
 
     return apiSuccess(result, 201, requestId)

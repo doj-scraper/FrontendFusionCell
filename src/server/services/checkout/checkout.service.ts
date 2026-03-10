@@ -249,7 +249,7 @@ export const createCheckoutIntent = async (
         orderId: order.id,
         orderNumber: order.orderNumber,
         userId: userId ?? 'guest',
-        guestEmail: isGuest ? input.email : undefined,
+        ...(isGuest ? { guestEmail: input.email } : {}),
       },
     })
 
@@ -266,7 +266,7 @@ export const createCheckoutIntent = async (
     if (isGuest && input.guestCartId) {
       await tx.cart.update({
         where: { id: input.guestCartId },
-        data: { status: 'COMPLETED' },
+        data: { status: 'CHECKED_OUT' },
       })
     }
 

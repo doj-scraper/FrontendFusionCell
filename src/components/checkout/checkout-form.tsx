@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useSession } from 'next-auth/react'
 import { Elements, useElements, useStripe } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
-import { ArrowLeft, CheckCircle2, Lock, PlusCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Lock, LogIn, PlusCircle, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 
 import { CheckoutPaymentElement } from '@/components/checkout/payment-element'
@@ -57,6 +58,18 @@ type NewAddressInput = {
   isDefault: boolean
 }
 
+// Inline address type for guest checkout (matches validation schema)
+type InlineAddressInput = {
+  fullName: string
+  line1: string
+  line2: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  phone: string
+}
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 
 const defaultAddressInput: NewAddressInput = {
@@ -70,6 +83,18 @@ const defaultAddressInput: NewAddressInput = {
   country: 'US',
   phone: '',
   isDefault: false,
+}
+
+// Default inline address for guest checkout
+const defaultInlineAddress: InlineAddressInput = {
+  fullName: '',
+  line1: '',
+  line2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  country: 'US',
+  phone: '',
 }
 
 function AddressCard({
@@ -203,6 +228,8 @@ function CheckoutInner({
 }
 
 export function CheckoutForm() {
+  const { data: session, status } = useSession()
+  const isAuthenticated = !!session?.user
   const [cart, setCart] = useState<CartSummary | null>(null)
   const [addresses, setAddresses] = useState<Address[]>([])
   const [selectedShippingAddressId, setSelectedShippingAddressId] = useState<string>('')
@@ -210,6 +237,12 @@ export function CheckoutForm() {
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true)
   const [email, setEmail] = useState('')
   const [newAddress, setNewAddress] = useState<NewAddressInput>(defaultAddressInput)
+  
+  // Guest checkout state
+  const [isGuestMode, setIsGuestMode] = useState(false)
+  const [guestShippingAddress, setGuestShippingAddress] = useState<InlineAddressInput>(defaultInlineAddress)
+  const [guestBillingAddress, setGuestBillingAddress] = useState<InlineAddressInput>(defaultInlineAddress)
+  
   const [intent, setIntent] = useState<CheckoutIntentResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreatingIntent, setIsCreatingIntent] = useState(false)
@@ -221,34 +254,41 @@ export function CheckoutForm() {
     setError(null)
 
     try {
-      const [cartResponse, addressResponse] = await Promise.all([
-        fetch('/api/cart'),
-        fetch('/api/account/addresses'),
-      ])
-
+      // First check if user is authenticated
+      // If not authenticated, we'll use guest checkout mode
+      
+      const cartResponse = await fetch('/api/cart')
       const cartPayload = (await cartResponse.json()) as {
         success: boolean
         data: CartSummary
-      }
-      const addressPayload = (await addressResponse.json()) as {
-        success: boolean
-        data: Address[]
-        error?: { code?: string }
       }
 
       if (cartPayload.success) {
         setCart(cartPayload.data)
       }
 
-      if (addressPayload.success) {
-        setAddresses(addressPayload.data)
-        const defaultAddress = addressPayload.data.find((item) => item.isDefault) ?? addressPayload.data[0]
-        if (defaultAddress) {
-          setSelectedShippingAddressId(defaultAddress.id)
-          setSelectedBillingAddressId(defaultAddress.id)
+      // Only try to load addresses if user is authenticated
+      if (isAuthenticated) {
+        const addressResponse = await fetch('/api/account/addresses')
+        const addressPayload = (await addressResponse.json()) as {
+          success: boolean
+          data: Address[]
+          error?: { code?: string }
         }
-      } else if (addressPayload.error?.code !== 'UNAUTHORIZED') {
-        setError('Unable to load your saved addresses right now.')
+
+        if (addressPayload.success) {
+          setAddresses(addressPayload.data)
+          const defaultAddress = addressPayload.data.find((item) => item.isDefault) ?? addressPayload.data[0]
+          if (defaultAddress) {
+            setSelectedShippingAddressId(defaultAddress.id)
+            setSelectedBillingAddressId(defaultAddress.id)
+          }
+        } else if (addressPayload.error?.code !== 'UNAUTHORIZED') {
+          setError('Unable to load your saved addresses right now.')
+        }
+      } else {
+        // Guest mode - set to guest mode
+        setIsGuestMode(true)
       }
     } catch {
       setError('Unable to load checkout details. Please refresh and try again.')
@@ -263,29 +303,79 @@ export function CheckoutForm() {
     }, 0)
 
     return () => clearTimeout(timeout)
-  }, [])
+  }, [isAuthenticated])
 
   const createIntent = async () => {
-    if (!cart?.id || !email || !selectedShippingAddressId) {
-      setError('Please choose shipping address and provide billing email.')
+    // Validation for both modes
+    if (!email) {
+      setError('Please provide a billing email address.')
       return
+    }
+
+    if (isGuestMode || !isAuthenticated) {
+      // Guest checkout validation
+      if (!cart?.id || !guestShippingAddress.fullName || !guestShippingAddress.line1 || 
+          !guestShippingAddress.city || !guestShippingAddress.state || !guestShippingAddress.postalCode) {
+        setError('Please complete your shipping address information.')
+        return
+      }
+    } else {
+      // Authenticated checkout validation
+      if (!cart?.id || !selectedShippingAddressId) {
+        setError('Please choose a shipping address.')
+        return
+      }
     }
 
     setIsCreatingIntent(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/checkout/intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cartId: cart.id,
+      let requestBody: Record<string, unknown>
+
+      if (isGuestMode || !isAuthenticated) {
+        // Guest checkout - send inline address data
+        requestBody = {
+          cartId: cart?.id,
+          email,
+          shippingAddress: {
+            fullName: guestShippingAddress.fullName,
+            line1: guestShippingAddress.line1,
+            line2: guestShippingAddress.line2 || undefined,
+            city: guestShippingAddress.city,
+            state: guestShippingAddress.state,
+            postalCode: guestShippingAddress.postalCode,
+            country: guestShippingAddress.country,
+            phone: guestShippingAddress.phone || undefined,
+          },
+          useShippingAsBilling,
+          billingAddress: useShippingAsBilling ? undefined : {
+            fullName: guestBillingAddress.fullName,
+            line1: guestBillingAddress.line1,
+            line2: guestBillingAddress.line2 || undefined,
+            city: guestBillingAddress.city,
+            state: guestBillingAddress.state,
+            postalCode: guestBillingAddress.postalCode,
+            country: guestBillingAddress.country,
+            phone: guestBillingAddress.phone || undefined,
+          },
+        }
+      } else {
+        // Authenticated checkout - use saved addresses
+        requestBody = {
+          cartId: cart?.id,
           email,
           shippingAddressId: selectedShippingAddressId,
           billingAddressId: useShippingAsBilling
             ? selectedShippingAddressId
             : selectedBillingAddressId,
-        }),
+        }
+      }
+
+      const response = await fetch('/api/checkout/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
       })
 
       const payload = (await response.json()) as {
@@ -379,114 +469,264 @@ export function CheckoutForm() {
             />
           </div>
 
-          {addresses.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Shipping address</p>
-                {addresses.map((address) => (
-                  <AddressCard
-                    key={`shipping-${address.id}`}
-                    address={address}
-                    selected={selectedShippingAddressId === address.id}
-                    onSelect={() => setSelectedShippingAddressId(address.id)}
-                  />
-                ))}
+          {isGuestMode || !isAuthenticated ? (
+            /* Guest Checkout - Inline Address Form */
+            <div className="space-y-6">
+              {/* Guest Info Banner */}
+              <div className="rounded-lg bg-violet-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-violet-700" />
+                    <p className="text-sm font-medium text-violet-900">
+                      Guest Checkout - No account required
+                    </p>
+                  </div>
+                  {status !== 'loading' && !isAuthenticated && (
+                    <Link href="/login" className="text-sm text-violet-700 hover:text-violet-800 hover:underline">
+                      <LogIn className="mr-1 inline h-4 w-4" />
+                      Sign in for saved addresses
+                    </Link>
+                  )}
+                </div>
               </div>
 
+              {/* Shipping Address Form for Guest */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Shipping Address</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Input
+                    placeholder="Full name"
+                    value={guestShippingAddress.fullName}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, fullName: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Phone (optional)"
+                    type="tel"
+                    value={guestShippingAddress.phone}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, phone: event.target.value }))}
+                  />
+                  <Input
+                    placeholder="Address line 1"
+                    className="md:col-span-2"
+                    value={guestShippingAddress.line1}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, line1: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Address line 2 (optional)"
+                    className="md:col-span-2"
+                    value={guestShippingAddress.line2}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, line2: event.target.value }))}
+                  />
+                  <Input
+                    placeholder="City"
+                    value={guestShippingAddress.city}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, city: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="State"
+                    value={guestShippingAddress.state}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, state: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Postal code"
+                    value={guestShippingAddress.postalCode}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, postalCode: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Country (e.g., US)"
+                    value={guestShippingAddress.country}
+                    onChange={(event) => setGuestShippingAddress((value) => ({ ...value, country: event.target.value.toUpperCase() }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Billing Address for Guest */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Billing address</p>
+                  <p className="text-sm font-medium">Billing Address</p>
                   <button
                     type="button"
-                    onClick={() => setUseShippingAsBilling((value) => !value)}
+                    onClick={() => setUseShippingAsBilling(!useShippingAsBilling)}
                     className="text-xs text-violet-700 hover:text-violet-800"
                   >
-                    {useShippingAsBilling ? 'Using shipping address' : 'Select separately'}
+                    {useShippingAsBilling ? 'Same as shipping' : 'Enter different billing address'}
                   </button>
                 </div>
-                {addresses.map((address) => (
-                  <AddressCard
-                    key={`billing-${address.id}`}
-                    address={address}
-                    selected={
-                      useShippingAsBilling
-                        ? selectedShippingAddressId === address.id
-                        : selectedBillingAddressId === address.id
-                    }
-                    onSelect={() => setSelectedBillingAddressId(address.id)}
-                  />
-                ))}
+                
+                {!useShippingAsBilling && (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Input
+                      placeholder="Full name"
+                      value={guestBillingAddress.fullName}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, fullName: event.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Phone (optional)"
+                      type="tel"
+                      value={guestBillingAddress.phone}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, phone: event.target.value }))}
+                    />
+                    <Input
+                      placeholder="Address line 1"
+                      className="md:col-span-2"
+                      value={guestBillingAddress.line1}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, line1: event.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Address line 2 (optional)"
+                      className="md:col-span-2"
+                      value={guestBillingAddress.line2}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, line2: event.target.value }))}
+                    />
+                    <Input
+                      placeholder="City"
+                      value={guestBillingAddress.city}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, city: event.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="State"
+                      value={guestBillingAddress.state}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, state: event.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Postal code"
+                      value={guestBillingAddress.postalCode}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, postalCode: event.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Country (e.g., US)"
+                      value={guestBillingAddress.country}
+                      onChange={(event) => setGuestBillingAddress((value) => ({ ...value, country: event.target.value.toUpperCase() }))}
+                      required
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ) : (
-            <p className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-900">
-              No saved addresses found. Add one below to proceed.
-            </p>
-          )}
+            /* Authenticated Checkout - Saved Addresses */
+            <>
+              {addresses.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Shipping address</p>
+                    {addresses.map((address) => (
+                      <AddressCard
+                        key={`shipping-${address.id}`}
+                        address={address}
+                        selected={selectedShippingAddressId === address.id}
+                        onSelect={() => setSelectedShippingAddressId(address.id)}
+                      />
+                    ))}
+                  </div>
 
-          <form onSubmit={createAddress} className="space-y-3 rounded-lg border border-dashed border-yellow-900/30 p-4">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <PlusCircle className="h-4 w-4 text-violet-700" />
-              Add new address
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input
-                placeholder="Label"
-                value={newAddress.label}
-                onChange={(event) => setNewAddress((value) => ({ ...value, label: event.target.value }))}
-              />
-              <Input
-                placeholder="Full name"
-                value={newAddress.fullName}
-                onChange={(event) => setNewAddress((value) => ({ ...value, fullName: event.target.value }))}
-                required
-              />
-              <Input
-                placeholder="Line 1"
-                value={newAddress.line1}
-                onChange={(event) => setNewAddress((value) => ({ ...value, line1: event.target.value }))}
-                required
-              />
-              <Input
-                placeholder="Line 2"
-                value={newAddress.line2}
-                onChange={(event) => setNewAddress((value) => ({ ...value, line2: event.target.value }))}
-              />
-              <Input
-                placeholder="City"
-                value={newAddress.city}
-                onChange={(event) => setNewAddress((value) => ({ ...value, city: event.target.value }))}
-                required
-              />
-              <Input
-                placeholder="State"
-                value={newAddress.state}
-                onChange={(event) => setNewAddress((value) => ({ ...value, state: event.target.value }))}
-                required
-              />
-              <Input
-                placeholder="Postal code"
-                value={newAddress.postalCode}
-                onChange={(event) => setNewAddress((value) => ({ ...value, postalCode: event.target.value }))}
-                required
-              />
-              <Input
-                placeholder="Country code (US)"
-                value={newAddress.country}
-                onChange={(event) => setNewAddress((value) => ({ ...value, country: event.target.value.toUpperCase() }))}
-                required
-              />
-            </div>
-            <Button type="submit" variant="outline" disabled={isSavingAddress}>
-              {isSavingAddress ? 'Saving...' : 'Save address'}
-            </Button>
-          </form>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Billing address</p>
+                      <button
+                        type="button"
+                        onClick={() => setUseShippingAsBilling((value) => !value)}
+                        className="text-xs text-violet-700 hover:text-violet-800"
+                      >
+                        {useShippingAsBilling ? 'Using shipping address' : 'Select separately'}
+                      </button>
+                    </div>
+                    {addresses.map((address) => (
+                      <AddressCard
+                        key={`billing-${address.id}`}
+                        address={address}
+                        selected={
+                          useShippingAsBilling
+                            ? selectedShippingAddressId === address.id
+                            : selectedBillingAddressId === address.id
+                        }
+                        onSelect={() => setSelectedBillingAddressId(address.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-900">
+                  No saved addresses found. Add one below to proceed.
+                </p>
+              )}
+
+              <form onSubmit={createAddress} className="space-y-3 rounded-lg border border-dashed border-yellow-900/30 p-4">
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <PlusCircle className="h-4 w-4 text-violet-700" />
+                  Add new address
+                </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Input
+                    placeholder="Label"
+                    value={newAddress.label}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, label: event.target.value }))}
+                  />
+                  <Input
+                    placeholder="Full name"
+                    value={newAddress.fullName}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, fullName: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Line 1"
+                    value={newAddress.line1}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, line1: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Line 2"
+                    value={newAddress.line2}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, line2: event.target.value }))}
+                  />
+                  <Input
+                    placeholder="City"
+                    value={newAddress.city}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, city: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="State"
+                    value={newAddress.state}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, state: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Postal code"
+                    value={newAddress.postalCode}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, postalCode: event.target.value }))}
+                    required
+                  />
+                  <Input
+                    placeholder="Country code (US)"
+                    value={newAddress.country}
+                    onChange={(event) => setNewAddress((value) => ({ ...value, country: event.target.value.toUpperCase() }))}
+                    required
+                  />
+                </div>
+                <Button type="submit" variant="outline" disabled={isSavingAddress}>
+                  {isSavingAddress ? 'Saving...' : 'Save address'}
+                </Button>
+              </form>
+            </>
+          )}
 
           <Button
             type="button"
             onClick={createIntent}
             className="bg-violet-700 text-white hover:bg-violet-800"
-            disabled={isCreatingIntent || !selectedShippingAddressId || !email}
+            disabled={isCreatingIntent || !email || (isGuestMode || !isAuthenticated ? !guestShippingAddress.fullName || !guestShippingAddress.line1 || !guestShippingAddress.city || !guestShippingAddress.state || !guestShippingAddress.postalCode : !selectedShippingAddressId)}
           >
             {isCreatingIntent ? 'Initializing payment...' : 'Continue to secure payment'}
           </Button>
